@@ -224,7 +224,7 @@ ws.on('message', async function incoming(data: any) {
 		conbsce.log(await connection.simulateTransaction(swapTx))
 		const latestBlockhash = await connection.getLatestBlockhash()
 		const txSig = await execute(swapTx, latestBlockhash, false)
-		const tokenTx = txSig ? `https://bscscan.io/tx/${txSig}` : ''
+		const tokenTx = txSig ? `https://bscscan.com/tx/${txSig}` : ''
 		conbsce.log("Result: ", tokenTx)
 	} catch (e) {
 
