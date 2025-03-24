@@ -1,4 +1,4 @@
-# EVM Bundler Using MEV-Boost
+# EVM Raydium Bundler Using MEV-Boost
 
 A sophisticated bundler designed for executing simultaneous transactions across multiple wallets on EVM-compatible networks (Ethereum, BSC, Base). This tool leverages MEV-boost and advanced bundling techniques for efficient transaction management.
 
